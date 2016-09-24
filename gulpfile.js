@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 //Make sure gulp loads all of the required plugins
 //located at 'package.json'
 var gulp = require('gulp'),
@@ -75,8 +77,8 @@ gulp.task('deploy', ['default'], function() {
   rsync({
     ssh: true,
     src: './',
-    dest: 'deploy@45.55.80.101:/home/deploy/node',
-    port: 22,
+    dest: process.env.DEPLOY_PATH,
+    port: process.env.DEPLOY_PORT,
     recursive: true,
     syncDest: false,
     //include 3rd party JS libraries located in '/assets/js/lib'
