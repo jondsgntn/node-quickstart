@@ -1,0 +1,4 @@
+.env
+/node_modules/
+/public/javascripts/build/
+/public/stylesheets/build/
