@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "supervisor ./bin/www"
+    "start": "supervisor ./bin/www",
+    "deploy": "gulp deploy && gulp shell"
   },
   "dependencies": {
     "body-parser": "~1.15.1",
@@ -34,6 +35,8 @@
     "gulp-rename": "~1.2.0",
     "gulp-uglify": "~0.3.0",
     "rsyncwrapper": "1.0.0",
-    "tiny-lr": "0.0.7"
+    "tiny-lr": "0.0.7",
+    "gulp-ssh": "~0.6.0",
+    "gulp-util": "~3.0.7"
   }
 }

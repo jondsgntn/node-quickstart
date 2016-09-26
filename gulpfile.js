@@ -5,10 +5,44 @@ require('dotenv').config();
 var gulp = require('gulp'),
     plugins = require('gulp-load-plugins')({ camelize: true }),
     lr = require('tiny-lr'),
-    server = lr()
-var rsync = require('rsyncwrapper')
+    server = lr();
+var rsync = require('rsyncwrapper');
 var browserSync = require('browser-sync').create();
-var fs = require('fs')
+var fs = require('fs');
+var GulpSSH = require('gulp-ssh');
+var gutil = require('gulp-util');
+
+var errorColoring = '\033[0;31m[ERROR]\033[0m';
+
+
+// Command line option:
+//  --fatal=[warning|error|off]
+var fatalLevel = require('yargs').argv.fatal;
+
+var ERROR_LEVELS = ['error', 'warning'];
+
+// Return true if the given level is equal to or more severe than
+// the configured fatality error level.
+// If the fatalLevel is 'off', then this will always return false.
+// Defaults the fatalLevel to 'error'.
+function isFatal(level) {
+   return ERROR_LEVELS.indexOf(level) <= ERROR_LEVELS.indexOf(fatalLevel || 'error');
+}
+
+// Handle an error based on its severity level.
+// Log all levels, and exit the process for fatal levels.
+function handleError(level, error) {
+   gutil.log(error.message);
+   if (isFatal(level)) {
+      process.exit(1);
+   }
+}
+
+// Convenience handler for error-level errors.
+function onError(error) { handleError.call(this, 'error', error);}
+// Convenience handler for warning-level errors.
+function onWarning(error) { handleError.call(this, 'warning', error);}
+
 
 //stylesheet tasks for minifying and concating
 //--------------------
@@ -77,7 +111,7 @@ gulp.task('deploy', ['default'], function() {
   rsync({
     ssh: true,
     src: './',
-    dest: process.env.DEPLOY_PATH,
+    dest: process.env.DEPLOY_USER + "@" + process.env.DEPLOY_HOST + ":" + process.env.DEPLOY_PATH,
     port: process.env.DEPLOY_PORT,
     recursive: true,
     syncDest: false,
@@ -94,6 +128,39 @@ gulp.task('deploy', ['default'], function() {
   });
 });
 
+
+// gulpSSH
+//-----------------------
+// set server SSH credentials to automate starting the Node server
+// once it's deployed
+//-----------------------
+// execute with 'gulp SSH'
+
+var config = {
+  host: '45.55.80.101',
+  port: 22,
+  username: 'deploy',
+  privateKey: fs.readFileSync(process.env.SSH_KEY_LOCATION)
+}
+
+var gulpSSH = new GulpSSH({
+  ignoreErrors: false,
+  sshConfig: config
+})
+
+gulp.task('sftp-read', function () {
+  return gulpSSH.sftp('read', '/home/deploy/node/.env', {filePath: '.env'})
+    .pipe(gulp.dest('logs'))
+})
+
+gulp.task('shell', function () {
+  return gulpSSH
+    .sftp('read', '/home/deploy/node/.env')
+      //.on('error', onError)
+      .on('error', onWarning)
+    //.pipe(shell('cd /home/deploy/node', {filePath: 'shell.log'}))
+    //.pipe(gulp.dest('logs'))
+});
 
 //set tasks to be executed simultaneously with other tasks when
 //the 'default' parameter is provided
